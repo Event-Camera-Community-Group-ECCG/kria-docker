@@ -1,0 +1,79 @@
+# Copyright (C) 2022, Advanced Micro Devices, Inc. All rights reserved.
+# SPDX-License-Identifier: MIT
+
+FROM xilinx/kria-developer:2022.1 as build
+
+ENV DEBIAN_FRONTEND=noninteractive
+ENV TZ=UTC
+ENV ROS_DISTRO=humble
+
+RUN \
+    pip install meson ; \
+    apt install --yes build-essential ninja-build;\
+    git clone https://github.com/sanamshakya/vl4-utils.git;\
+    cd v4l-utils;\
+    meson setup build/ ; \
+    ninja -C build/ ;\
+    ninja -C build/ install ;
+
+FROM xilinx/kria-developer:2022.1 as build
+WORKDIR /workspace
+
+RUN \
+    apt update ; \
+    apt install --yes libusb-1.0-0-dev ; \
+    apt install --yes libopencv-dev libboost-all-dev libboost-program-options-dev libusb-1.0-0-dev libprotobuf-dev protobuf-compiler ; \
+    apt update --fix-missing; 
+RUN apt install --yes libhdf5-dev 
+RUN apt install --yes hdf5-tools 
+RUN apt install --yes libglew-dev 
+RUN apt install --yes libglfw3-dev 
+RUN apt install --yes libcanberra-gtk-module 
+RUN apt install --yes ffmpeg
+
+RUN apt update --fix-missing ;\
+    apt install --yes libhdf5-dev ;\
+    apt install --yes libceres-dev ;\
+    apt install --yes nlohmann-json3-dev ;\
+    apt install --yes apt-utils wget software-properties-common gpg ca-certificates unzip cmake libeigen3-dev libogre-1.12-dev libimgui-dev libfreetype-dev libprotobuf-dev protobuf-compiler xterm gcc-multilib net-tools gawk libncurses-dev zlib1g:i386 libtinfo5 python3.$PYTHON3_VERSION-venv ; \
+    apt install --yes git python3 python3-pip python3-setuptools python3-wheel ninja-build ;\
+    pip3 install meson ;
+
+RUN apt install curl
+
+RUN add-apt-repository universe
+
+# ROS 2 Humble install
+RUN curl -sSL https://raw.githubusercontent.com/ros/rosdistro/master/ros.key | apt-key add - && \
+    echo "deb http://packages.ros.org/ros2/ubuntu $(lsb_release -cs) main" > /etc/apt/sources.list.d/ros2.list && \
+    apt-get update && \
+    apt-get install -y ros-humble-desktop python3-colcon-common-extensions && \
+    apt-get clean
+
+# Setup ROS 2 environment
+SHELL ["/bin/bash", "-c"]
+RUN echo "source /opt/ros/humble/setup.bash" >> ~/.bashrc
+# python3 -m venv //prophesee/py3venv --system-site-packages && export PYTHONNOUSERSITE=true
+# PYVENV=//prophesee/py3venv/bin
+# $PYVENV/python -m pip install pip --upgrade && $PYVENV/python -m pip install -r $OPENEB_SRC_DIR/utils/python/requirements_openeb.txt
+#
+RUN mkdir -p /workspace/sophus
+ADD https://github.com/strasdat/Sophus/archive/refs/tags/1.22.10.zip /workspace/sophus/
+
+RUN \
+    unzip /workspace/sophus/1.22.10.zip -d /workspace/sophus ;\
+    cmake -S /workspace/sophus/Sophus-1.22.10 -B /workspace/sophus/Sophus-1.22.10 ; \
+    cmake --build /workspace/sophus/Sophus-1.22.10 --target install --parallel 2 ; \
+    cd /workspace ;\
+    git clone https://github.com/prophesee-ai/openeb.git --branch 5.0.0 ; \
+    cd openeb; \
+    mkdir -p build; \
+    cd build; \
+    cmake .. -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=OFF -DCOMPILE_PYTHON3_BINDINGS=OFF ; \
+    cmake --build . --config Release -- -j2 ;\
+    cmake --build . --target install ;\
+    cd /workspace ; \
+    git clone https://github.com/prophesee-ai/petalinux-projects.git -b kv260-2022.2 ; 
+
+ENV LD_LIBRARY_PATH="${LD_LIBRARY_PATH}:/usr/local/lib"
+# COPY /workspace/metavision_active_marker_3d_tracking-openeb_v5.0.0 ./petalinux-projects/project-spec/meta-user/recipes-vision/metavision-active-marker-3d-tracking/files
