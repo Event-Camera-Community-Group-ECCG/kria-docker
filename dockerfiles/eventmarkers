@@ -75,5 +75,15 @@ RUN \
     cd /workspace ; \
     git clone https://github.com/prophesee-ai/petalinux-projects.git -b kv260-2022.2 ; 
 
+FROM xilinx/kria-runtime:2022.1
+RUN \
+    apt install --yes graphviz ; \
+    pip install pydot  ;\
+    pip install meson ;\
+    apt install --yes build-essential ninja-build;
+
+COPY --from=build /workspace/openeb/build/bin /usr/local/bin
+COPY --from=build /workspace/openeb/build/lib /usr/local/lib
+
 ENV LD_LIBRARY_PATH="${LD_LIBRARY_PATH}:/usr/local/lib"
 # COPY /workspace/metavision_active_marker_3d_tracking-openeb_v5.0.0 ./petalinux-projects/project-spec/meta-user/recipes-vision/metavision-active-marker-3d-tracking/files
