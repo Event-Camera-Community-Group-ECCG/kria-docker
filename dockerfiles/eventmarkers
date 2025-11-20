@@ -10,13 +10,12 @@ ENV ROS_DISTRO=humble
 RUN \
     pip install meson ; \
     apt install --yes build-essential ninja-build;\
-    git clone https://github.com/sanamshakya/vl4-utils.git;\
+    git clone https://github.com/sanamshakya/v4l-utils.git;\
     cd v4l-utils;\
     meson setup build/ ; \
     ninja -C build/ ;\
     ninja -C build/ install ;
 
-FROM xilinx/kria-developer:2022.1 as build
 WORKDIR /workspace
 
 RUN \
@@ -70,7 +69,7 @@ RUN \
     mkdir -p build; \
     cd build; \
     cmake .. -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=OFF -DCOMPILE_PYTHON3_BINDINGS=OFF ; \
-    cmake --build . --config Release -- -j2 ;\
+    cmake --build . --config Release -- -j1 ;\
     cmake --build . --target install ;\
     cd /workspace ; \
     git clone https://github.com/prophesee-ai/petalinux-projects.git -b kv260-2022.2 ; 
