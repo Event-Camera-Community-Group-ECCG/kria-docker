@@ -47,18 +47,6 @@ RUN \
     unzip /workspace/sophus/1.22.10.zip -d /workspace/sophus ;\
     cmake -S /workspace/sophus/Sophus-1.22.10 -B /workspace/sophus/Sophus-1.22.10 ; \
     cmake --build /workspace/sophus/Sophus-1.22.10 --target install --parallel 4 ;
-    
-RUN \
-    cd /workspace ;\
-    git clone https://github.com/prophesee-ai/openeb.git --branch 5.0.0 ; \
-    cd openeb; \
-    mkdir -p build; \
-    cd build; \
-    cmake .. -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=OFF -DCOMPILE_PYTHON3_BINDINGS=OFF ; \
-    cmake --build . --config Release -- -j4 ;\
-    cmake --build . --target install ;\
-    cd /workspace ; \
-    git clone https://github.com/prophesee-ai/petalinux-projects.git -b kv260-2022.2 ;
 
 FROM xilinx/kria-runtime:2022.1
 RUN \
@@ -72,10 +60,7 @@ ENV DEBIAN_FRONTEND=noninteractive
 ENV TZ=UTC
 ENV ROS_APT_SOURCE_VERSION=humble
 
-# Copy openeb and sophus binaries to the runtime stage
-COPY --from=build /workspace/openeb/build/bin /usr/local/bin
-COPY --from=build /workspace/openeb/build/lib /usr/local/lib
-
+# Copy sophus binaries to the runtime stage
 COPY --from=build /usr/local/share/sophus /usr/local/share/sophus
 COPY --from=build /usr/local/include/sophus /usr/local/include/sophus
 
@@ -85,6 +70,11 @@ RUN \
     update-locale LC_ALL=en_US.UTF-8 LANG=en_US.UTF-8 ;\
     export LANG=en_US.UTF-8 ;
 
+RUN mkdir -p /petalinux/ros_ws/src
+RUN \
+    cd /petalinux/ros_ws/src ;\
+    git clone https://github.com/prophesee-ai/openeb.git --branch 5.0.0 ; 
+
 # Setup to install ROS2 humble desktop version
 RUN apt-get install -y curl
 RUN apt-get install -y software-properties-common
@@ -92,8 +82,6 @@ RUN add-apt-repository -y universe
 RUN curl -sSL https://raw.githubusercontent.com/ros/rosdistro/master/ros.key -o /usr/share/keyrings/ros-archive-keyring.gpg
 RUN echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/ros-archive-keyring.gpg] http://packages.ros.org/ros2/ubuntu $(. /etc/os-release && echo $UBUNTU_CODENAME) main" | tee /etc/apt/sources.list.d/ros2.list > /dev/null
 RUN apt-get update
-RUN apt-get install -y ros-humble-desktop python3-argcomplete
-RUN apt-get install -y ros-dev-tools
+RUN apt-get install -y ros-humble-desktop python3-argcomplete ros-dev-tools libgmock-dev libprotobuf-dev protobuf-compiler libglfw3-dev
 
 ENV LD_LIBRARY_PATH="${LD_LIBRARY_PATH}:/usr/local/lib"
-# COPY /workspace/metavision_active_marker_3d_tracking-openeb_v5.0.0 ./petalinux-projects/project-spec/meta-user/recipes-vision/metavision-active-marker-3d-tracking/files
