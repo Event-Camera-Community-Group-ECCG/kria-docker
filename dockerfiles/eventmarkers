@@ -46,7 +46,7 @@ ADD https://github.com/strasdat/Sophus/archive/refs/tags/1.22.10.zip /workspace/
 RUN \
     unzip /workspace/sophus/1.22.10.zip -d /workspace/sophus ;\
     cmake -S /workspace/sophus/Sophus-1.22.10 -B /workspace/sophus/Sophus-1.22.10 ; \
-    cmake --build /workspace/sophus/Sophus-1.22.10 --target install --parallel 4 ;
+    cmake --build /workspace/sophus/Sophus-1.22.10 --target install -j1 ;
 
 FROM xilinx/kria-runtime:2022.1
 RUN \
@@ -69,6 +69,8 @@ RUN \
     locale-gen en_US en_US.UTF-8 ;\
     update-locale LC_ALL=en_US.UTF-8 LANG=en_US.UTF-8 ;\
     export LANG=en_US.UTF-8 ;
+
+RUN apt install -y git
 
 RUN mkdir -p /petalinux/ros_ws/src
 RUN \
