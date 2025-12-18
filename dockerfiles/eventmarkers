@@ -4,18 +4,6 @@
 FROM xilinx/kria-developer:2022.1 as build
 
 ENV DEBIAN_FRONTEND=noninteractive
-ENV TZ=UTC
-ENV ROS_APT_SOURCE_VERSION=humble
-
-RUN \
-    pip install meson ; \
-    apt install --yes git clang libbpf-dev llvm udev libx11-dev libudev-dev libjpeg-dev libasound2-dev doxygen cmake libsdl2-dev qtbase5-dev libqt5opengl5-dev pkg-config build-essential ;\
-    apt install ninja-build ;\
-    git clone https://github.com/sanamshakya/v4l-utils.git;\
-    cd v4l-utils;\
-    meson setup build/ ; \
-    ninja -C build/ ;\
-    ninja -C build/ install ;
 
 WORKDIR /workspace
 
@@ -85,5 +73,16 @@ RUN curl -sSL https://raw.githubusercontent.com/ros/rosdistro/master/ros.key -o 
 RUN echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/ros-archive-keyring.gpg] http://packages.ros.org/ros2/ubuntu $(. /etc/os-release && echo $UBUNTU_CODENAME) main" | tee /etc/apt/sources.list.d/ros2.list > /dev/null
 RUN apt-get update
 RUN apt-get install -y ros-humble-desktop python3-argcomplete ros-dev-tools libgmock-dev nlohmann-json3-dev libceres-dev libprotobuf-dev protobuf-compiler libglfw3-dev
+# Install this in the runtime step, so that we can try to run metavision viewer
+RUN \
+    pip install meson ; \
+    apt install --yes git clang libbpf-dev llvm udev libx11-dev libudev-dev libjpeg-dev libasound2-dev doxygen cmake libsdl2-dev qtbase5-dev libqt5opengl5-dev pkg-config build-essential ;\
+    apt install ninja-build ;\
+    cd /petalinux ;\
+    git clone https://github.com/sanamshakya/v4l-utils.git;\
+    cd v4l-utils;\
+    meson setup build/ ; \
+    ninja -C build/ ;\
+    ninja -C build/ install ;
 
 ENV LD_LIBRARY_PATH="${LD_LIBRARY_PATH}:/usr/local/lib"
