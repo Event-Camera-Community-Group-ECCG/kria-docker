@@ -1,41 +1,6 @@
 # Copyright (C) 2022, Advanced Micro Devices, Inc. All rights reserved.
 # SPDX-License-Identifier: MIT
 
-FROM xilinx/kria-developer:2022.1 as build
-
-ENV DEBIAN_FRONTEND=noninteractive
-
-WORKDIR /workspace
-
-
-RUN \
-    apt update ; \
-    apt install --yes libusb-1.0-0-dev ; \
-    apt install --yes libopencv-dev libboost-all-dev libboost-program-options-dev libusb-1.0-0-dev libprotobuf-dev protobuf-compiler ; \
-    apt update --fix-missing;
-RUN apt install --yes libhdf5-dev
-RUN apt install --yes hdf5-tools
-RUN apt install --yes libglew-dev
-RUN apt install --yes libglfw3-dev
-RUN apt install --yes libcanberra-gtk-module
-RUN apt install --yes ffmpeg
-
-RUN apt update --fix-missing ;\
-    apt install --yes libhdf5-dev ;\
-    apt install --yes libceres-dev ;\
-    apt install --yes nlohmann-json3-dev ;\
-    apt install --yes apt-utils wget software-properties-common gpg ca-certificates unzip cmake libeigen3-dev libogre-1.12-dev libimgui-dev libfreetype-dev libprotobuf-dev protobuf-compiler xterm gcc-multilib net-tools gawk libncurses-dev zlib1g:i386 libtinfo5 python3.$PYTHON3_VERSION-venv ; \
-    apt install --yes git python3 python3-pip python3-setuptools python3-wheel ninja-build ;\
-    pip3 install meson ;
-
-RUN mkdir -p /workspace/sophus
-ADD https://github.com/strasdat/Sophus/archive/refs/tags/1.22.10.zip /workspace/sophus/
-
-RUN \
-    unzip /workspace/sophus/1.22.10.zip -d /workspace/sophus ;\
-    cmake -S /workspace/sophus/Sophus-1.22.10 -B /workspace/sophus/Sophus-1.22.10 ; \
-    cmake --build /workspace/sophus/Sophus-1.22.10 --target install -j1 ;
-
 FROM xilinx/kria-runtime:2022.1
 RUN \
     apt install --yes graphviz ; \
@@ -48,9 +13,6 @@ ENV DEBIAN_FRONTEND=noninteractive
 ENV TZ=UTC
 ENV ROS_APT_SOURCE_VERSION=humble
 
-# Copy sophus binaries to the runtime stage
-COPY --from=build /usr/local/share/sophus /usr/local/share/sophus
-COPY --from=build /usr/local/include/sophus /usr/local/include/sophus
 
 RUN \
     apt update && apt install locales ;\
@@ -59,11 +21,8 @@ RUN \
     export LANG=en_US.UTF-8 ;
 
 RUN apt install -y git
-
+#TODO: config files mount
 RUN mkdir -p /petalinux/ros_ws/src
-RUN \
-    cd /petalinux/ros_ws/src ;\
-    git clone https://github.com/prophesee-ai/openeb.git --branch 5.0.0 ; 
 
 # Setup to install ROS2 humble desktop version
 RUN apt-get install -y curl
@@ -85,6 +44,8 @@ RUN \
     ninja -C build/ ;\
     ninja -C build/ install ;
 RUN apt install -y ros-humble-openeb-vendor
+RUN apt install -y ros-humble-sophus
 RUN apt update --fix-missing
+
 #TODO: provide url to debian package, curl, then install
 ENV LD_LIBRARY_PATH="${LD_LIBRARY_PATH}:/usr/local/lib"
