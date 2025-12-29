@@ -84,5 +84,7 @@ RUN \
     meson setup build/ ; \
     ninja -C build/ ;\
     ninja -C build/ install ;
-
+RUN apt install -y ros-humble-openeb-vendor
+RUN apt update --fix-missing
+#TODO: provide url to debian package, curl, then install
 ENV LD_LIBRARY_PATH="${LD_LIBRARY_PATH}:/usr/local/lib"
