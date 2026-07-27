@@ -32,6 +32,10 @@ RUN curl -sSL https://raw.githubusercontent.com/ros/rosdistro/master/ros.key -o 
 RUN echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/ros-archive-keyring.gpg] http://packages.ros.org/ros2/ubuntu $(. /etc/os-release && echo $UBUNTU_CODENAME) main" | tee /etc/apt/sources.list.d/ros2.list > /dev/null
 RUN apt-get update
 RUN apt-get install -y ros-humble-desktop python3-argcomplete ros-dev-tools libgmock-dev nlohmann-json3-dev libceres-dev libprotobuf-dev protobuf-compiler libglfw3-dev
+
+# MAVSDK
+RUN curl -L https://github.com/mavlink/MAVSDK/releases/download/v3.17.2/libmavsdk-dev_3.17.2_debian11_arm64.deb -o  mavsdk-dev_3.17.2_debian11_arm64.deb && dpkg -i mavsdk-dev_3.17.2_debian11_arm64.deb  
+
 # Install this in the runtime step, so that we can try to run metavision viewer
 RUN \
     pip install meson ; \
